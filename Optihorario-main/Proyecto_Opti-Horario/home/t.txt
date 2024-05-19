@@ -1,0 +1,90 @@
+<?php
+session_start();
+if (!isset($_SESSION['usuario_id'])) {
+    header("Location: login.php");
+    exit();
+}
+include 'conexion.php';
+$usuario_id = $_SESSION['usuario_id'];
+
+// Consulta para obtener las materias seleccionadas del usuario
+$query = "SELECT ms.materia_id, mh.grupo, mh.dia_semana, mh.hora_inicio, mh.hora_final
+            FROM MateriasSeleccionadas ms
+            JOIN MateriasHorario mh ON ms.materia_id = mh.materia_id
+            WHERE ms.usuario_id = $usuario_id";
+
+$result = mysqli_query($conn, $query);
+
+if (!$result) {
+    echo "Error al consultar la base de datos: " . mysqli_error($conn);
+} else {
+    // Array asociativo para almacenar los horarios de las materias
+    $horarios = array();
+
+    // Recorre los resultados y almacena los horarios de las materias
+    while ($row = mysqli_fetch_assoc($result)) {
+        $materia_id = $row['materia_id'];
+        $grupo = $row['grupo'];
+        $dia_semana = $row['dia_semana'];
+        $hora_inicio = $row['hora_inicio'];
+        $hora_final = $row['hora_final'];
+        
+        // Verifica si ya existe un horario para esta materia
+        // Si no existe, o si este horario es mejor, lo almacena
+        if (!isset($horarios[$materia_id]) || compararHorarios($horarios[$materia_id], compact('dia_semana', 'hora_inicio'))) {
+            $horarios[$materia_id] = array(
+                'grupo' => $grupo,
+                'dia_semana' => $dia_semana,
+                'hora_inicio' => $hora_inicio,
+                'hora_final' => $hora_final
+            );
+        }
+    }
+    
+        // Función para comparar dos horarios y determinar cuál es mejor
+        function compararHorarios($horario1, $horario2)
+        {
+            // Implementa tu lógica para comparar los horarios aquí
+            // Puedes considerar criterios como la duración, los días de la semana, etc.
+            // Devuelve true si $horario1 es mejor, false si $horario2 es mejor
+            // Este es solo un ejemplo básico, debes adaptarlo a tus necesidades
+            return $horario1['hora_inicio'] > $horario2['hora_inicio'];
+        }
+    
+    // Muestra el mejor horario de cada materia
+    echo "<h1>Mejor Horario Seleccionado</h1>";
+    echo "<div class='horario'>";
+    echo "<table>";
+    echo "<tr><th>Materia</th><th>Grupo</th><th>Día</th><th>Hora de inicio</th><th>Hora final</th></tr>";
+    foreach ($horarios as $materia_id => $horario) {
+        echo "<tr>";
+        echo "<td>$materia_id</td>";
+        echo "<td>" . $horario['grupo'] . "</td>";
+        echo "<td>" . $horario['dia_semana'] . "</td>";
+        echo "<td>" . $horario['hora_inicio'] . "</td>";
+        echo "<td>" . $horario['hora_final'] . "</td>";
+        echo "</tr>";
+    }
+    echo "</table>";
+    echo "</div>";
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Opti-horario</title>
+    <link rel="icon" href="../img/favicon.png" type="image/x-icon">
+    <link rel="stylesheet" href="../style/normalize.css">
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600;800&display=swap" rel="stylesheet">
+    <link rel='stylesheet' type='text/css' media='screen' href='../style/createSchedule.css'>
+</head>
+<body>
+    
+</body>
+</html>
